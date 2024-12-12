@@ -8,7 +8,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -16,16 +20,18 @@ public class SimpleHttpServer {
 
     private static volatile boolean running = true;
     private static volatile String serverDirectory;
+
     public static void main(String[] args) throws IOException {
-        
+
         Thread stopListener = new Thread(() -> {
             Scanner sc = new Scanner(System.in);
-            while (running) { 
+            while (running) {
                 String input = sc.nextLine();
                 if ("stop".equalsIgnoreCase(input.trim())) {
                     running = false;
                     sc.close();
-                    System.out.println("Shutdown.");
+                    // System.out.println("服务器关闭: Shutdown.");
+                    log("服务器关闭: Shutdown.");
                     System.exit(0);
                 }
             }
@@ -39,7 +45,8 @@ public class SimpleHttpServer {
         try (FileReader reader = new FileReader("server.properties")) {
             config.load(reader);
         } catch (IOException e) {
-            System.err.println("无法加载配置文件，使用默认设置。");
+            // System.err.println("无法加载配置文件，使用默认设置。");
+            log("无法加载配置文件，使用默认设置。");
         }
 
         // 从配置文件获取端口号和 IP 地址
@@ -53,10 +60,12 @@ public class SimpleHttpServer {
         server.createContext("/", new FileDownloadHandler());
 
         server.setExecutor(null); // 使用默认执行器
-        System.out.println("服务器运行于: http://" + ipAddress + ":" + port);
+        // System.out.println("服务器运行于: http://" + ipAddress + ":" + port);
+        log("服务器运行于: http://" + ipAddress + ":" + port);
         server.start();
 
-        System.out.println("使用 stop 命令可停止运行服务器.");
+        log("使用 stop 命令可停止运行服务器.");
+        // System.out.println("使用 stop 命令可停止运行服务器.");
     }
 
     // 文件下载和目录浏览处理器
@@ -64,7 +73,8 @@ public class SimpleHttpServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String path = exchange.getRequestURI().getPath();
-            System.out.println("请求URL: " + path);
+            // System.out.println("请求URL: " + path);
+            log("收到请求: " + path);
 
             if (path == null || path.equals("/")) {
                 path = "/";
@@ -74,7 +84,7 @@ public class SimpleHttpServer {
 
             if (!directory.exists()) {
                 // 如果路径不存在，返回 404
-                String response = "File or directory not found";
+                String response = "404. File or directory not found";
                 exchange.sendResponseHeaders(404, response.length());
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(response.getBytes());
@@ -86,25 +96,50 @@ public class SimpleHttpServer {
                 // 如果是目录，返回文件和子目录列表
                 File[] files = directory.listFiles();
                 Arrays.sort(files);
-                StringBuilder responseBuilder = new StringBuilder("<html><body><h1>Directory Listing</h1><ul>");
+                StringBuilder responseBuilder = new StringBuilder();
+                // Header
+                responseBuilder.append("<html><body><h1>📦 Index of "+ path +"</h1><ul>");
+
+                // 有些问题。URL多加 "/" 会多次返回
+                // if (!path.equals("/")) {
+                //     // 添加返回上级目录链接
+                //     String parentPath = path.substring(0, path.lastIndexOf('/'));
+                //     if (parentPath.isEmpty()) {
+                //         parentPath = "/";
+                //     }
+                //     responseBuilder.append("<li><a href=\"").append(parentPath).append("\">.. (parent directory)</a></li>");
+                // }
+                // 添加返回上层目录- 简单粗暴
                 if (!path.equals("/")) {
                     responseBuilder.append("<li><a href=\"../\">.. (parent directory)</a></li>");
                 }
+
+                // 循环文件夹与文件列表
                 for (File file : files) {
-                    String filePath = path + (path.endsWith("/") ? "" : "/") + file.getName();
+                    String fileName = file.getName();
+                    String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name());
+                    String filePath = path + (path.endsWith("/") ? "" : "/") + encodedName;
                     if (file.isDirectory()) {
-                        responseBuilder.append("<li><a href=\"").append(filePath).append("/\">[DIR] ").append(file.getName()).append("</a></li>");
+                        responseBuilder.append("<li><a href=\""+ filePath +"\">📁 "+ fileName +"</a></li>");
                     } else {
-                        responseBuilder.append("<li><a href=\"").append(filePath).append("\">").append(file.getName()).append("</a></li>");
+                        // responseBuilder.append("<li><a href=\"").append(filePath).append("\">").append(fileName).append("</a></li>");
+                        responseBuilder.append("<li><a href=\""+ filePath +"\">"+ fileName +"</a></li>");
                     }
                 }
+
+                // Footer
                 responseBuilder.append("</ul></body></html>");
 
+                // 将StringBuilder的内容转换为字符串
                 String response = responseBuilder.toString();
-                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
-                exchange.sendResponseHeaders(200, response.length());
+
+                // 获取UTF-8编码的字节数组
+                byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
+
+                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=utf-8");
+                exchange.sendResponseHeaders(200, responseBytes.length);
                 try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(response.getBytes());
+                    os.write(responseBytes);
                 }
                 return;
             }
@@ -113,12 +148,16 @@ public class SimpleHttpServer {
             if (directory.isFile()) {
                 // 设置响应头
                 exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=\"" + directory.getName() + "\"");
+                exchange.getResponseHeaders().add(
+                        "Content-Disposition",
+                        "attachment; filename=\"" + 
+                        URLEncoder.encode(directory.getName(), StandardCharsets.UTF_8.name()) + 
+                        "\"; " + "filename*=UTF-8''" + URLEncoder.encode(directory.getName(), StandardCharsets.UTF_8.name()));
 
                 // 发送文件内容
                 exchange.sendResponseHeaders(200, directory.length());
                 try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(directory));
-                     OutputStream os = exchange.getResponseBody()) {
+                        OutputStream os = exchange.getResponseBody()) {
                     byte[] buffer = new byte[1024];
                     int bytesRead;
                     while ((bytesRead = bis.read(buffer)) != -1) {
@@ -127,5 +166,11 @@ public class SimpleHttpServer {
                 }
             }
         }
+    }
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static void log(String message) {
+        String logMessage = "[" + DATE_FORMAT.format(new Date()) + "] " + message;
+        System.out.println(logMessage);
     }
 }
