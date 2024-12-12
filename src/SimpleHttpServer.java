@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -72,7 +73,13 @@ public class SimpleHttpServer {
     static class FileDownloadHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            String path = exchange.getRequestURI().getPath();
+
+            // // 获取原始路径并解码（支持中文）
+            String rawPath = exchange.getRequestURI().getRawPath();
+            String path = URLDecoder.decode(rawPath, StandardCharsets.UTF_8.name());
+            
+
+            // String path = exchange.getRequestURI().getPath();
             // System.out.println("请求URL: " + path);
             log("收到请求: " + path);
 
@@ -117,11 +124,12 @@ public class SimpleHttpServer {
                 // 循环文件夹与文件列表
                 for (File file : files) {
                     String fileName = file.getName();
-                    String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name());
-                    String filePath = path + (path.endsWith("/") ? "" : "/") + encodedName;
+                    // String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name());
+                    String filePath = path + (path.endsWith("/") ? "" : "/") + fileName;
                     if (file.isDirectory()) {
                         responseBuilder.append("<li><a href=\""+ filePath +"\">📁 "+ fileName +"</a></li>");
                     } else {
+                        // log(filePath + fileName);
                         // responseBuilder.append("<li><a href=\"").append(filePath).append("\">").append(fileName).append("</a></li>");
                         responseBuilder.append("<li><a href=\""+ filePath +"\">"+ fileName +"</a></li>");
                     }
@@ -146,13 +154,15 @@ public class SimpleHttpServer {
 
             // 如果是文件，提供下载
             if (directory.isFile()) {
+                String encodedFileName = URLEncoder.encode(directory.getName(), "UTF-8").replaceAll("\\+", "%20");
                 // 设置响应头
                 exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                exchange.getResponseHeaders().add(
-                        "Content-Disposition",
-                        "attachment; filename=\"" + 
-                        URLEncoder.encode(directory.getName(), StandardCharsets.UTF_8.name()) + 
-                        "\"; " + "filename*=UTF-8''" + URLEncoder.encode(directory.getName(), StandardCharsets.UTF_8.name()));
+                // exchange.getResponseHeaders().add(
+                //         "Content-Disposition",
+                //         "attachment; filename=\"" + 
+                //         URLEncoder.encode(directory.getName(), StandardCharsets.UTF_8.name()) + 
+                //         "\"; " + "filename*=UTF-8''" + URLEncoder.encode(directory.getName(), StandardCharsets.UTF_8.name()));
+                exchange.getResponseHeaders().add("Content-Disposition", "attachment;filename*=UTF-8''" + encodedFileName);
 
                 // 发送文件内容
                 exchange.sendResponseHeaders(200, directory.length());
@@ -173,4 +183,5 @@ public class SimpleHttpServer {
         String logMessage = "[" + DATE_FORMAT.format(new Date()) + "] " + message;
         System.out.println(logMessage);
     }
+
 }
