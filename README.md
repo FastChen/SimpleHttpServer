@@ -41,4 +41,4 @@ java -jar SimpleHttpServer.jar
 
 ## 问题
 
-- 中文文件名导致无法正常解析
+- 暂未发现其它问题
