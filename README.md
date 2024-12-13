@@ -19,18 +19,25 @@ server-dir=./files
 
 ## 构建
 
-可使用提供的脚本 `构建编译.bat` 进行构建。
+**脚本构建:**
 
-**手动构建：**
+可使用提供的脚本 `build-jar.bat` 进行构建。
+
+**使用 IntelliJ IDEA 构建:**
+
+1. 菜单栏 - 构建(B)
+2. 选项 - 编译 Artifacts...
+
+**手动构建:**
 
 1. 构建
 ```
-javac -d build src/SimpleHttpServer.java
+javac -d ./out/build ./src/*.java
 ```
 
 2. 打包
 ```
-jar cfm SimpleHttpServer.jar MANIFEST.MF -C build .
+jar cfm ./SimpleHttpServer.jar ./src/META-INF/MANIFEST.MF -C ./out/build .
 ```
 
 3. 运行
@@ -41,4 +48,4 @@ java -jar SimpleHttpServer.jar
 
 ## 问题
 
-- 暂未发现其它问题
+> 暂未发现其它问题, 有问题请提交 [issues](https://github.com/FastChen/SimpleHttpServer/issues).
