@@ -58,55 +58,65 @@ public class Main {
     static class SimpleHttpHandler implements HttpHandler{
         @Override
         public void handle(HttpExchange exchange) {
-            new Thread(() -> {
-                try{
-                    String path = exchange.getRequestURI().getPath();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        String path = exchange.getRequestURI().getPath();
 
-                    Log2Console.info("收到请求地址: " + path);
+                        Log2Console.info("收到请求地址: " + path);
 
-                    // 传递请求地址，设置工作目录
-                    File directory = new File(serverDirectory + path);
+                        // 传递请求地址，设置工作目录
+                        File directory = new File(serverDirectory + path);
 
-                    if (!directory.exists()) {
-                        // 如果路径不存在，返回 404
-                        String response = "404. File or directory not found";
-                        exchange.sendResponseHeaders(404, response.length());
-                        try (OutputStream os = exchange.getResponseBody()) {
-                            os.write(response.getBytes());
-                        }
-                        return;
-                    }
-
-                    if(directory.isDirectory()){
-                        String response = GenerateTreeDirectory(path, directory);
-                        exchange.getResponseHeaders().add("Content-Type", "text/html; charset=utf-8");
-                        exchange.sendResponseHeaders(200, 0);
-                        OutputStream os = exchange.getResponseBody();
-                        os.write(response.getBytes());
-                        os.close();
-
-                    } else if (directory.isFile()) {
-                        String encodedFileName = URLEncoder.encode(directory.getName(), "UTF-8").replaceAll("\\+", "%20");
-                        exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                        exchange.getResponseHeaders().add("Content-Disposition", "attachment;filename*=UTF-8''" +  encodedFileName);
-                        exchange.sendResponseHeaders(200, 0);
-
-                        Log2Console.info("访问路径: " + path +" | 下载文件: " + encodedFileName);
-
-                        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(directory));
-                             OutputStream os = exchange.getResponseBody()) {
-                            byte[] buffer = new byte[1024];
-                            int bytesRead;
-                            while ((bytesRead = bis.read(buffer)) != -1) {
-                                os.write(buffer, 0, bytesRead);
+                        if (!directory.exists()) {
+                            // 如果路径不存在，返回 404
+                            String response = "404. File or directory not found";
+                            exchange.sendResponseHeaders(404, response.length());
+                            try (OutputStream os = exchange.getResponseBody()) {
+                                os.write(response.getBytes());
                             }
+                            return;
                         }
-                    }
 
-                }catch (IOException ie) {
-                    ie.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                        if(directory.isDirectory()){
+                            String response = GenerateTreeDirectory(path, directory);
+                            exchange.getResponseHeaders().add("Content-Type", "text/html; charset=utf-8");
+                            exchange.sendResponseHeaders(200, 0);
+                            OutputStream os = exchange.getResponseBody();
+                            os.write(response.getBytes());
+                            os.close();
+
+                        } else if (directory.isFile()) {
+                            String encodedFileName = URLEncoder.encode(directory.getName(), "UTF-8").replaceAll("\\+", "%20");
+                            exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
+                            exchange.getResponseHeaders().add("Content-Disposition", "attachment;filename*=UTF-8''" +  encodedFileName);
+                            exchange.sendResponseHeaders(200, directory.length());
+
+                            Log2Console.info("访问路径: " + path +" | 下载文件: " + encodedFileName);
+
+                            OutputStream os = exchange.getResponseBody();
+                            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(directory))) {
+                                byte[] buffer = new byte[1024];
+                                int bytesRead;
+                                while ((bytesRead = bis.read(buffer)) != -1) {
+                                    os.write(buffer, 0, bytesRead);
+                                }
+                            }
+                            finally {
+                                os.flush();
+                                os.close();
+                            }
+
+                        }
+
+                    }catch (IOException ie) {
+                        Log2Console.warning(ie.getMessage());
+                        ie.printStackTrace();
+                    } catch (Exception e) {
+                        Log2Console.warning(e.getMessage());
+                        e.printStackTrace();
+                    }
                 }
             }).start();
         }
