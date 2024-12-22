@@ -122,15 +122,13 @@ public class Main {
     }
 
     // 遍历当前文件夹
-    static String GenerateTreeDirectory(String RawUrlPath, File directory) throws UnsupportedEncodingException {
+    static String GenerateTreeDirectory(String RawUrlPath, File directory) {
         Log2Console.info("访问路径: " + RawUrlPath + " | 文件路径: " + directory.getPath());
         StringBuilder sb = new StringBuilder();
 
         if (directory.isDirectory()) {
             // Header
-            sb.append("<html><body><h1>📦 Index of ");
-            sb.append(URLDecoder.decode(RawUrlPath, StandardCharsets.UTF_8));
-            sb.append("</h1><ul>");
+            sb.append("<html><body><h1>📦 Index of ").append(URLDecoder.decode(RawUrlPath, StandardCharsets.UTF_8)).append("</h1><ul>");
 
             if (!RawUrlPath.equals("/")) {
                 // 添加返回上级目录链接
@@ -149,10 +147,8 @@ public class Main {
                     // 编码文件名以防出现特殊字符
                     String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
                     String encodeURLPath = RawUrlPath + (RawUrlPath.endsWith("/") ? "" : "/") + encodedFileName.replace("+", "%20");
-                    sb.append("<li><a href=\"" + encodeURLPath + "\">");
-                    sb.append((isDir ? "📂" : "") );
-                    sb.append(fileName);
-                    sb.append("</a></li>");
+
+                    sb.append("<li><a href=\"").append(encodeURLPath).append("\">").append((isDir ? "📂" : "")).append(fileName).append("</a></li>");
                 }
             }
             // Footer
