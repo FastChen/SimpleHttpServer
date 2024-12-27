@@ -15,6 +15,8 @@ public class Main {
 
     // 服务器路径
     private static volatile String serverDirectory;
+    // 使用动态线程池，直接开线程似乎会影响整体崩溃
+    private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     public static void main(String[] args) throws IOException {
         // 命令监听
@@ -53,14 +55,12 @@ public class Main {
         // 创建 Http 服务
         HttpServer server = HttpServer.create(new InetSocketAddress(ipAddress, port), 0);
         server.createContext("/", new SimpleHttpHandler());
-        server.setExecutor(null);
+        server.setExecutor(executor);
         server.start();
 
         Log2Console.info("服务器运行于: http://" + ipAddress + ":" + port);
     }
 
-    // 使用动态线程池，直接开线程似乎会影响整体崩溃
-    private static final ExecutorService executor = Executors.newCachedThreadPool();
     static class SimpleHttpHandler implements HttpHandler{
         @Override
         public void handle(HttpExchange exchange) {
