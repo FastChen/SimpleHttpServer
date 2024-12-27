@@ -14,11 +14,7 @@ public class Log2Console
 
     private static String format(Level level, Date date, String mesg){
         StringBuilder sb = new StringBuilder();
-        sb.append("[" + DATE_FORMAT.format(new Date()) + "]");
-        sb.append(" ");
-        sb.append("[" + level + "]");
-        sb.append(" ");
-        sb.append(mesg);
+        sb.append("[").append(DATE_FORMAT.format(new Date())).append("]").append(" ").append("[").append(level).append("]").append(" ").append(mesg);
         return sb.toString();
     }
 
