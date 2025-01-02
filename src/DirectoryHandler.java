@@ -26,7 +26,7 @@ public class DirectoryHandler implements HttpHandler {
                 String response = generateDirectoryTree(exchange.getRequestURI().getRawPath(), directory);
                 sendResponse(exchange, 200, response);
             } else if (directory.isFile()) {
-                FileDownloader.downloadFile(exchange, directory);
+                FileDownloader.serveFile(exchange, directory);
             }
         } catch (Exception e) {
             Log2Console.warning(e.getMessage());
