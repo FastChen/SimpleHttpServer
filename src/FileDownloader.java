@@ -2,6 +2,9 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class FileDownloader {
 
