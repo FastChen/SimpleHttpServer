@@ -43,28 +43,67 @@ public class DirectoryHandler implements HttpHandler {
     }
 
     private String generateDirectoryTree(String rawUrlPath, File directory) {
+        // TODO: 继续优化结构和生成排序。
+
         StringBuilder sb = new StringBuilder();
-        sb.append("<html><body><h1>📦 Index of ").append(URLDecoder.decode(rawUrlPath, StandardCharsets.UTF_8)).append("</h1><ul>");
+
+        String pathName = URLDecoder.decode(rawUrlPath, StandardCharsets.UTF_8);
+
+        sb.append("<html><head><title>Index of ").append(pathName).append("</title></head>");
+        sb.append("<body>");
+        sb.append("<h1>Index of ").append(pathName).append("</h1>");
+
+        sb.append("<table><tr><th valign=\"top\">[ICO]</th><th>文件名</th><th>最后修改时间</th><th>文件大小</th></tr>");
+        sb.append("<tr><th colspan=\"4\"><hr></th></tr>");
+
+        // 老生成头部HTML拼接
+        // sb.append("<html><body><h1>📦 Index of ").append(URLDecoder.decode(rawUrlPath, StandardCharsets.UTF_8)).append("</h1><ul>");
 
         if (!rawUrlPath.equals("/")) {
             String parentPath = rawUrlPath.substring(0, rawUrlPath.lastIndexOf('/'));
             if (parentPath.isEmpty()) {
                 parentPath = "/";
             }
-            sb.append("<li><a href=\"").append(parentPath).append("\">\uD83D\uDD19 .. (返回上级目录)</a></li>");
+            // 老生成返回上级HTML拼接
+            // sb.append("<li><a href=\"").append(parentPath).append("\">\uD83D\uDD19 .. (返回上级目录)</a></li>");
+
+            sb.append("<tr>");
+            sb.append(" <td valign=\"top\">[PARENTDIR]</td>");
+            sb.append(" <td><a href=\"").append(parentPath).append("\">返回上级目录</a></td>");
+            sb.append(" <td>&nbsp;</td>");
+            sb.append(" <td align=\"right\"> - </td>");
+            sb.append("</tr>");
         }
 
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
+                
+                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 boolean isDir = file.isDirectory();
+                String fileType = isDir ? "DIR" : "FILE";
+                
                 String fileName = file.getName();
                 String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
                 String encodeURLPath = rawUrlPath + (rawUrlPath.endsWith("/") ? "" : "/") + encodedFileName.replace("+", "%20");
-                sb.append("<li><a href=\"").append(encodeURLPath).append("\">").append((isDir ? "📂" : "")).append(fileName).append("</a></li>");
+
+                // 老生成跳转HTML拼接
+                // sb.append("<li><a href=\"").append(encodeURLPath).append("\">").append((isDir ? "📂" : "")).append(fileName).append("</a></li>");
+
+                sb.append("<tr>");
+                sb.append(" <td valign=\"top\">[").append(fileType).append("]</td>");
+                sb.append(" <td><a href=\"").append(encodeURLPath).append("\">").append(fileName).append("</a></td>");
+                sb.append(" <td align=\"right\">").append(df.format(file.lastModified())).append("</td>");
+                sb.append(" <td align=\"right\">").append(file.length()).append(" B</td>");
+                sb.append("</tr>");
+
             }
         }
-        sb.append("</ul></body></html>");
+        
+        // 老生成底部HTML拼接
+        // sb.append("</ul></body></html>");
+
+        sb.append("<tr><th colspan=\"4\"><hr></th></tr></table></body></html>");
         return sb.toString();
     }
 }
