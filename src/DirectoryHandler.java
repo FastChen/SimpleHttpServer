@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 
 public class DirectoryHandler implements HttpHandler {
 
@@ -56,17 +57,11 @@ public class DirectoryHandler implements HttpHandler {
         sb.append("<table><tr><th valign=\"top\">[ICO]</th><th>文件名</th><th>最后修改时间</th><th>文件大小</th></tr>");
         sb.append("<tr><th colspan=\"4\"><hr></th></tr>");
 
-        // 老生成头部HTML拼接
-        // sb.append("<html><body><h1>📦 Index of ").append(URLDecoder.decode(rawUrlPath, StandardCharsets.UTF_8)).append("</h1><ul>");
-
         if (!rawUrlPath.equals("/")) {
             String parentPath = rawUrlPath.substring(0, rawUrlPath.lastIndexOf('/'));
             if (parentPath.isEmpty()) {
                 parentPath = "/";
             }
-            // 老生成返回上级HTML拼接
-            // sb.append("<li><a href=\"").append(parentPath).append("\">\uD83D\uDD19 .. (返回上级目录)</a></li>");
-
             sb.append("<tr>");
             sb.append(" <td valign=\"top\">[PARENTDIR]</td>");
             sb.append(" <td><a href=\"").append(parentPath).append("\">返回上级目录</a></td>");
@@ -87,9 +82,6 @@ public class DirectoryHandler implements HttpHandler {
                 String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
                 String encodeURLPath = rawUrlPath + (rawUrlPath.endsWith("/") ? "" : "/") + encodedFileName.replace("+", "%20");
 
-                // 老生成跳转HTML拼接
-                // sb.append("<li><a href=\"").append(encodeURLPath).append("\">").append((isDir ? "📂" : "")).append(fileName).append("</a></li>");
-
                 sb.append("<tr>");
                 sb.append(" <td valign=\"top\">[").append(fileType).append("]</td>");
                 sb.append(" <td><a href=\"").append(encodeURLPath).append("\">").append(fileName).append("</a></td>");
@@ -99,9 +91,6 @@ public class DirectoryHandler implements HttpHandler {
 
             }
         }
-        
-        // 老生成底部HTML拼接
-        // sb.append("</ul></body></html>");
 
         sb.append("<tr><th colspan=\"4\"><hr></th></tr></table></body></html>");
         return sb.toString();

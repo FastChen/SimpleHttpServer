@@ -1,12 +1,18 @@
 # SimpleHttpServer
 
-一个简单的 Http 服务器，运行时会将服务器目录 `server-dir` 作为根目录进行使用，并渲染一个简单的文件树目录，实现一个简单文件浏览、访问与下载功能。
+一个简单、便携的 HttpWeb 服务器(只有10Kb)，运行时会将服务器目录 `server-dir` 作为根目录进行使用，并渲染一个简单的文件树目录，实现一个简单文件浏览、访问与下载功能。
 
-> 第二个版本!，现在使用了线程池，更加稳定、支持并发。
+## 它能干什么
+
+它将对指定的目录做出一个非常简单的目录列表Web页面，即文件目录树，通过创建 `server.properties` 并修改配置项 `server-dir=你的目录路径` 作为 Index 页面。
+
+例如:
+![SimpleHttpServer-Index](/images/index.png)
 
 ## 使用
 
-可创建配置文件 `server.properties` 放置和 `SimpleHttpServer.Jar` 包同目录下，修改配置实现自定义。
+1. (必要) 安装 Java21 或更高版本环境。
+2. (可选) 可创建配置文件 `server.properties` 放置和 `SimpleHttpServer.Jar` 包同目录下，修改配置实现自定义。
 
 ```
 # 服务器绑定 IP 地址
